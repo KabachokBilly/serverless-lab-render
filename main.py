@@ -3,7 +3,7 @@ import psycopg2
 import os
 from urllib.parse import urlparse
 
-app = Flask(__name__)
+app = Flask(name)
 
 # Подключение к БД
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -19,7 +19,6 @@ if DATABASE_URL:
 else:
     conn = None
 
-# Создание таблицы при старте
 if conn:
     with conn.cursor() as cur:
         cur.execute("""
@@ -30,6 +29,7 @@ if conn:
             )
         """)
         conn.commit()
+
 
 @app.route('/save', methods=['POST'])
 def save_message():
@@ -45,17 +45,21 @@ def save_message():
 
     return jsonify({"status": "saved", "message": message})
 
+
 @app.route('/messages')
 def get_messages():
     if not conn:
         return jsonify({"error": "DB not connected"}), 500
 
     with conn.cursor() as cur:
-        cur.execute("SELECT id, content, created_at FROM messages ORDER BY id DESC LIMIT 10")
+        cur.execute(
+            "SELECT id, content, created_at FROM messages ORDER BY id DESC LIMIT 10")
         rows = cur.fetchall()
 
-    messages = [{"id": r[0], "text": r[1], "time": r[2].isoformat()} for r in rows]
+    messages = [{"id": r[0], "text": r[1], "time": r[2].isoformat()}
+                for r in rows]
     return jsonify(messages)
 
-if __name__ == '__main__':
+
+if name == 'main':
     app.run(host='0.0.0.0', port=5000)
